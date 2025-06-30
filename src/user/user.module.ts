@@ -1,21 +1,19 @@
+// user.module.ts
 import { Module } from '@nestjs/common';
-import { UserService } from './user.service';
-import { UserController } from './user.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './user.entity';
-import { JwtModule } from '@nestjs/jwt';
+import { User } from './entities/user.entity';
+import { UserController } from './user.controller';
+import { UserService } from './user.service';
+
 
 @Module({
-  imports:[
-    TypeOrmModule.forFeature([User]),
-    JwtModule.register({
-      secret: 'zzf_secret', // 替换为更安全的 secret
-      signOptions: { expiresIn: '7d' },
-    }),
-
+  imports: [
+    TypeOrmModule.forFeature([User]), // 注册 User 实体
   ],
-  providers: [UserService],
   controllers: [UserController],
-  exports:[UserService],
+  providers: [
+    UserService,
+  ],
+  exports: [UserService], // 可选：如果其他模块要使用 UserService
 })
 export class UserModule {}

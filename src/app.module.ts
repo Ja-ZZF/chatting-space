@@ -3,8 +3,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from './user/user.module';
-import { FriendModule } from './friend/friend.module';
-import { MessageModule } from './message/message.module';
+import { AuthModule } from './auth/auth.module';
+import { ContactModule } from './contact/contact.module';
 
 @Module({
   imports: [
@@ -19,9 +19,8 @@ import { MessageModule } from './message/message.module';
       synchronize: false, // 开发用，生产环境建议关闭
     }),
     UserModule,
-    FriendModule,
-    MessageModule,
-
+    AuthModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [AppService],

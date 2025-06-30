@@ -1,25 +1,44 @@
-import { Controller, Post, Body, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  UnauthorizedException,
+  Get,
+} from '@nestjs/common';
 import { UserService } from './user.service';
-import { RegisterUserDto } from './dto/register-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
-import { User } from './user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
 
-@Controller('user')
+@Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+  ) {}
 
-  @Get()
-  getAll():Promise<User[]>{
+  /**
+   * 注册新用户
+   */
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  async register(@Body() createUserDto: CreateUserDto) {
+    const user = await this.userService.createUser(createUserDto);
+    return {
+      message: 'User created successfully',
+      user: {
+        user_id: user.user_id,
+        username: user.username,
+        display_name: user.display_name,
+        avatar_url: user.avatar_url,
+        created_at: user.created_at,
+      },
+    };
+  }
+
+  @Get('all')
+  async getAll(){
     return this.userService.findAll();
   }
 
-  @Post('register')
-  register(@Body() dto: RegisterUserDto) {
-    return this.userService.register(dto);
-  }
 
-  @Post('login')
-  login(@Body() dto: LoginUserDto) {
-    return this.userService.login(dto);
-  }
 }

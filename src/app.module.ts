@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserModule } from './user/user.module';
+import { UserModule } from './users/user.module';
 import { AuthModule } from './auth/auth.module';
-import { ContactModule } from './contact/contact.module';
+import { ContactModule } from './contacts/contact.module';
+import { MessageModule } from './message/message.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ContactModule } from './contact/contact.module';
     UserModule,
     AuthModule,
     ContactModule,
+    MessageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

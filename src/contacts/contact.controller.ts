@@ -1,16 +1,20 @@
 // src/contacts/controllers/contact.controller.ts
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ContactService } from './contact.service';
 import { ContactResponseDto } from './dto/response-contact.dto';
 import { CreateContactDto } from './dto/create-contact.dto';
+import { ContactWithOtherUserDto } from './dto/contact-with-other-user.dto';
 
 @Controller('contacts')
 export class ContactController {
   constructor(private readonly contactService: ContactService) {}
 
+
   @Get()
-  async getContacts(): Promise<ContactResponseDto[]> {
-    const userId = '当前登录用户ID'; // 实际中从 req.user 中获取
+  async getContacts(@Query('userId') userId: string): Promise<ContactWithOtherUserDto[]> {
+    if (!userId) {
+      throw new BadRequestException('Missing userId query parameter');
+    }
     return this.contactService.findAllByUserId(userId);
   }
 
@@ -20,13 +24,13 @@ export class ContactController {
   }
 
   // 新增联系人
-  @Post()
+  @Post('add')
   async createContact(@Body() createContactDto: CreateContactDto): Promise<ContactResponseDto> {
     return this.contactService.create(createContactDto);
   }
 
   // 删除联系人
-  @Delete(':id')
+  @Delete('delete/:id')
   async deleteContact(@Param('id') id: string): Promise<void> {
     return this.contactService.delete(id);
   }

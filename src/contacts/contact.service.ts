@@ -5,6 +5,8 @@ import { Repository } from 'typeorm';
 import { Contact } from './entities/contact.entity';
 import { ContactResponseDto } from './dto/response-contact.dto';
 import { CreateContactDto } from './dto/create-contact.dto';
+import { ContactWithUserDto } from './dto/contact-with-user.dto';
+import { ContactWithOtherUserDto } from './dto/contact-with-other-user.dto';
 
 @Injectable()
 export class ContactService {
@@ -13,22 +15,33 @@ export class ContactService {
     private readonly contactRepository: Repository<Contact>,
   ) {}
 
-  async findAllByUserId(userId: string): Promise<ContactResponseDto[]> {
-    const contacts = await this.contactRepository
-      .createQueryBuilder('contact')
-      .where('contact.user_a_id = :userId OR contact.user_b_id = :userId', { userId })
-      .orderBy('contact.last_message_sent_at', 'DESC')
-      .getMany();
+  async findAllByUserId(userId: string): Promise<ContactWithOtherUserDto[]> {
+  const contacts = await this.contactRepository.createQueryBuilder('contact')
+    .leftJoinAndSelect('contact.userA', 'userA')
+    .leftJoinAndSelect('contact.userB', 'userB')
+    .where('contact.user_a_id = :userId OR contact.user_b_id = :userId', { userId })
+    .orderBy('contact.last_message_sent_at', 'DESC')
+    .getMany();
 
-    return contacts.map(c => ({
-      contact_id: c.contact_id,
-      user_a_id: c.user_a_id,
-      user_b_id: c.user_b_id,
-      created_at: c.created_at,
-      last_message_sent_at: c.last_message_sent_at,
-    }));
+    return contacts.map(c => {
+      // 判断哪一个是“非自己”的用户
+      const isUserA = c.userA.user_id === userId;
+      const otherUser = isUserA ? c.userB : c.userA;
+
+      return {
+        contact_id: c.contact_id,
+        created_at: c.created_at,
+        last_message_sent_at: c.last_message_sent_at,
+
+        otherUser: {
+          user_id: otherUser.user_id,
+          username: otherUser.username,
+          display_name: otherUser.display_name,
+          avatar_url: otherUser.avatar_url,
+        },
+      };
+    });
   }
-
   async findOne(contactId: string): Promise<ContactResponseDto> {
     const contact = await this.contactRepository.findOneBy({ contact_id: contactId });
     if (!contact) throw new Error('Contact not found');

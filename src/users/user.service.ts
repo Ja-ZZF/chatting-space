@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 
 @Injectable()
 export class UserService {
@@ -20,7 +21,7 @@ export class UserService {
    * 注册新用户
    */
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-    const { username, password, display_name, avatar_url } = createUserDto;
+    const { username, password, display_name} = createUserDto;
 
     // 1. 检查用户名是否已存在
     const existingUser = await this.userRepository.findOneBy({ username });
@@ -36,7 +37,6 @@ export class UserService {
       username,
       password_hash,
       display_name: display_name || username, // 默认等于 username
-      avatar_url: avatar_url || null,
     });
 
     // 4. 保存到数据库
@@ -61,23 +61,47 @@ export class UserService {
   }
 
   /**
-   * 根据用户名查找用户（可选）
-   */
-  async findOneByUsername(username: string): Promise<User | null> {
-    return await this.userRepository.findOneBy({ username });
-  }
-
-  /**
-   * 根据 ID 查找用户（可选）
-   */
-  async findOneById(user_id: string): Promise<User | null> {
-    return await this.userRepository.findOneBy({ user_id });
-  }
-
-  /**
    * 查找所有用户
    */
   async findAll():Promise<User[]>{
     return this.userRepository.find();
+  }
+
+  /**
+   * 根据用户名查找用户（可选）
+   */
+  async findUserByUsername(username: string): Promise<UserResponseDto | null> {
+    const user = await this.userRepository.findOne({
+      where: { username },
+    });
+
+    if (!user) return null;
+
+    return new UserResponseDto({
+      user_id: user.user_id,
+      username: user.username,
+      display_name: user.display_name || undefined,
+      avatar_url: user.avatar_url || undefined,
+      created_at: user.created_at,
+    });
+  }
+
+  /**
+ * 根据用户 ID 查找用户（可选）
+ */
+  async findUserById(user_id: string): Promise<UserResponseDto | null> {
+    const user = await this.userRepository.findOne({
+      where: { user_id },
+    });
+
+    if (!user) return null;
+
+    return new UserResponseDto({
+      user_id: user.user_id,
+      username: user.username,
+      display_name: user.display_name || undefined,
+      avatar_url: user.avatar_url || undefined,
+      created_at: user.created_at,
+    });
   }
 }

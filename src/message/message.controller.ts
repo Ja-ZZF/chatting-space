@@ -6,7 +6,7 @@ import { MessageResponseDto } from './dto/message.response.dto';
 export class MessageController {
   constructor(private readonly messageService: MessageService) {}
 
-  @Get()
+  @Get('all')
     async getAlll(){
         return this.messageService.getAll();
     }

@@ -6,9 +6,12 @@ import {
   HttpStatus,
   UnauthorizedException,
   Get,
+  HttpException,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 
 @Controller('users')
 export class UserController {
@@ -35,9 +38,42 @@ export class UserController {
     };
   }
 
+  //获取所有用户信息（调试用）
   @Get('all')
   async getAll(){
     return this.userService.findAll();
+  }
+
+  //根据name获取信息
+  @Get('search')
+  async searchUser(@Query('username') username: string): Promise<UserResponseDto> {
+    if (!username || username.trim() === '') {
+      throw new HttpException('Username is required', HttpStatus.BAD_REQUEST);
+    }
+
+    const user = await this.userService.findUserByUsername(username.trim());
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user;
+  }
+
+  @Get('by-id')
+  async searchUserById(@Query('user_id') user_id : string):Promise<UserResponseDto>{
+    if(!user_id || user_id.trim()===''){
+      throw new HttpException("UserId is required",HttpStatus.BAD_REQUEST);
+    }
+
+      const user = await this.userService.findUserById(user_id.trim());
+
+      if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user;
+
   }
 
 

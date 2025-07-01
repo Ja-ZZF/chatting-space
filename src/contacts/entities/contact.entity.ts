@@ -22,6 +22,12 @@ export class Contact {
   @Column('timestamptz', { nullable: true })
   last_message_sent_at: Date | null;
 
+  @Column('integer')
+  user_a_unread: number = 0;
+
+  @Column('integer')
+  user_b_unread: number = 0;
+
   // 建立与 user_a_id 对应的用户关系
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_a_id', referencedColumnName: 'user_id' })
@@ -32,7 +38,7 @@ export class Contact {
   @JoinColumn({ name: 'user_b_id', referencedColumnName: 'user_id' })
   userB: User;
 
-
+  //消息列表
   @OneToMany(() => Message, message => message.contact)
   messages: Message[];
 }

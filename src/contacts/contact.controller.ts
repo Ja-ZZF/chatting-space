@@ -1,5 +1,5 @@
 // src/contacts/controllers/contact.controller.ts
-import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ContactService } from './contact.service';
 import { ContactResponseDto } from './dto/response-contact.dto';
 import { CreateContactDto } from './dto/create-contact.dto';
@@ -10,6 +10,7 @@ export class ContactController {
   constructor(private readonly contactService: ContactService) {}
 
 
+  //根据用户id查询所有contact
   @Get()
   async getContacts(@Query('userId') userId: string): Promise<ContactWithOtherUserDto[]> {
     if (!userId) {
@@ -18,6 +19,7 @@ export class ContactController {
     return this.contactService.findAllByUserId(userId);
   }
 
+  //根据contactId查询
   @Get(':id')
   async getContact(@Param('id') id: string): Promise<ContactResponseDto> {
     return this.contactService.findOne(id);
@@ -34,4 +36,16 @@ export class ContactController {
   async deleteContact(@Param('id') id: string): Promise<void> {
     return this.contactService.delete(id);
   }
+
+  @Put(':contactId/clear-unread')
+    async clearUnread(
+      @Param('contactId') contactId: string,
+      @Query('userId') userId: string,
+    ): Promise<void> {
+      if (!userId || !contactId) {
+        throw new BadRequestException('Missing userId or contactId');
+      }
+      return this.contactService.clearUnreadForUser(userId, contactId);
+    }
+
 }

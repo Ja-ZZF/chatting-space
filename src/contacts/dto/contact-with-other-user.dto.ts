@@ -9,4 +9,7 @@ export class ContactWithOtherUserDto {
     display_name: string | null;
     avatar_url: string | null;
   };
+
+  unreadCount: number;
+  lastMessageContent: string | null;
 }

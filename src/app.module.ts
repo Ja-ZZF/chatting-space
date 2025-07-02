@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { ContactModule } from './contacts/contact.module';
 import { MessageModule } from './message/message.module';
 
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -23,6 +24,7 @@ import { MessageModule } from './message/message.module';
     AuthModule,
     ContactModule,
     MessageModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],

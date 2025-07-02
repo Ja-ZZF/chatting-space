@@ -16,6 +16,13 @@ async function bootstrap() {
    // ⚠️ 关键点：启用 Socket.IO 适配器
   app.useWebSocketAdapter(new IoAdapter(app)); // 👈 必须加上这行！
 
+  // ✅ 启用 CORS 支持
+  app.enableCors({
+    origin: '*', // 允许所有来源（你可以改为特定域名）
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+  });
+
 
   await app.listen(process.env.PORT ?? 3000);
 }

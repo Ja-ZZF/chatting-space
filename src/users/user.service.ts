@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -103,5 +103,16 @@ export class UserService {
       avatar_url: user.avatar_url || undefined,
       created_at: user.created_at,
     });
+  }
+
+  // 更新用户头像 URL
+  async updateAvatar(userId: string, avatarUrl: string): Promise<void> {
+    const user = await this.userRepository.findOneBy({ user_id: userId });
+    if (!user) {
+      throw new NotFoundException('用户不存在');
+    }
+
+    user.avatar_url = avatarUrl; // 假设 avatar 字段存储头像 URL
+    await this.userRepository.save(user);
   }
 }

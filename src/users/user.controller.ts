@@ -8,10 +8,17 @@ import {
   Get,
   HttpException,
   Query,
+  UseInterceptors,
+  BadRequestException,
+  Param,
+  UploadedFile,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { diskStorage } from 'multer';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { extname } from 'path';
 
 @Controller('users')
 export class UserController {
@@ -75,6 +82,41 @@ export class UserController {
     return user;
 
   }
+
+  @Post('upload-avatar/:userId')
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: diskStorage({
+        destination: './public/uploads/avatar',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          return cb(new BadRequestException('只支持图片文件'), false);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  async uploadAvatar(
+    @Param('userId') userId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('没有上传文件');
+    }
+
+    const avatarUrl = `/static/uploads/avatar/${file.filename}`;
+    await this.userService.updateAvatar(userId, avatarUrl);
+
+    return { avatarUrl };
+  }
+
 
 
 }

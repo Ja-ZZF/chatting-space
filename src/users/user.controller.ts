@@ -12,6 +12,7 @@ import {
   BadRequestException,
   Param,
   UploadedFile,
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -19,6 +20,8 @@ import { UserResponseDto } from './dto/user-response.dto';
 import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
+import { Request } from 'express';
+
 
 @Controller('users')
 export class UserController {
@@ -106,12 +109,17 @@ export class UserController {
   async uploadAvatar(
     @Param('userId') userId: string,
     @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request, // 获取请求对象，用于拼接域名
   ) {
     if (!file) {
       throw new BadRequestException('没有上传文件');
     }
 
-    const avatarUrl = `/static/uploads/avatar/${file.filename}`;
+    // 生成绝对 URL
+    const protocol = req.protocol;
+    const host = req.get('host'); // 如 47.117.0.254:3000
+    const avatarUrl = `${protocol}://${host}/static/uploads/avatar/${file.filename}`;
+
     await this.userService.updateAvatar(userId, avatarUrl);
 
     return { avatarUrl };

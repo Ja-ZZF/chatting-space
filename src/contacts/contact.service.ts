@@ -51,7 +51,12 @@ export class ContactService {
           unreadCount: isUserA ? c.user_a_unread : c.user_b_unread,
 
           // ✅ 最后一条消息内容
-          lastMessageContent: lastMessage?.content ?? null,
+          lastMessageContent: (() => {
+            if (!lastMessage) return null;
+            if (lastMessage.message_type === 'text') return lastMessage.content;
+            if (lastMessage.message_type === 'image') return '[图片]';
+            return null;
+          })(),
         };
       }));
   }

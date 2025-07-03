@@ -63,9 +63,10 @@ export class UploadController {
       fileFilter: (req, file, cb) => {
         console.log('上传文件的 mimetype:', file.mimetype);
         // 支持的音频格式
-        if (!file.mimetype.match(/^audio\/(mpeg|wav|x-wav|wave|m4a|ogg|aac)$/i)) {
+        if (!file.mimetype.match(/^audio\/(mpeg|wav|x-wav|wave|mp4|m4a|ogg|aac)$/i)) {
           return cb(new BadRequestException('只支持音频文件 (mp3, wav, wave, m4a, ogg, aac)'), false);
         }
+
 
         cb(null, true);
       },

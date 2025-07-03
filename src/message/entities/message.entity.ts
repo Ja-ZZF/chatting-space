@@ -21,7 +21,7 @@ export class Message {
 
   @Column({
     type: 'enum', // 使用 enum 类型代替 varchar 并限制取值范围
-    enum: ['text', 'image', 'video'], // 定义枚举值
+    enum: ['text', 'image', 'video', 'audio'],  // <-- 这里新增 audio
     default: 'text',
   })
   message_type: string;

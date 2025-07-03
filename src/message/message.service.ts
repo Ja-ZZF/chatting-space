@@ -54,48 +54,48 @@ export class MessageService {
 
   //添加发送消息
   async createMessage(data: {
-  contact_id: string;
-  sender_id: string;
-  receiver_id: string;
-  content: string;
-  message_type: string;
-}): Promise<MessageResponseDto> {
-  const message = this.messageRepository.create(data);
-  const savedMessage = await this.messageRepository.save(message);
+    contact_id: string;
+    sender_id: string;
+    receiver_id: string;
+    content: string;
+    message_type: string;
+  }): Promise<MessageResponseDto> {
+    const message = this.messageRepository.create(data);
+    const savedMessage = await this.messageRepository.save(message);
 
-  const [sender, receiver] = await Promise.all([
-    this.userRepository.findOneBy({ user_id: data.sender_id }),
-    this.userRepository.findOneBy({ user_id: data.receiver_id }),
-  ]);
+    const [sender, receiver] = await Promise.all([
+      this.userRepository.findOneBy({ user_id: data.sender_id }),
+      this.userRepository.findOneBy({ user_id: data.receiver_id }),
+    ]);
 
-  if (!sender || !receiver) {
-    throw new Error('Sender or Receiver not found');
+    if (!sender || !receiver) {
+      throw new Error('Sender or Receiver not found');
+    }
+
+    return {
+      message_id: savedMessage.message_id,
+      contact_id: savedMessage.contact_id,
+      sender_id: savedMessage.sender_id,
+      receiver_id: savedMessage.receiver_id,
+      content: savedMessage.content,
+      message_type: savedMessage.message_type,
+      created_at: savedMessage.created_at,
+
+      sender: {
+        user_id: sender.user_id,
+        username: sender.username,
+        display_name: sender.display_name,
+        avatar_url: sender.avatar_url,
+      },
+
+      receiver: {
+        user_id: receiver.user_id,
+        username: receiver.username,
+        display_name: receiver.display_name,
+        avatar_url: receiver.avatar_url,
+      },
+    };
   }
-
-  return {
-    message_id: savedMessage.message_id,
-    contact_id: savedMessage.contact_id,
-    sender_id: savedMessage.sender_id,
-    receiver_id: savedMessage.receiver_id,
-    content: savedMessage.content,
-    message_type: savedMessage.message_type,
-    created_at: savedMessage.created_at,
-
-    sender: {
-      user_id: sender.user_id,
-      username: sender.username,
-      display_name: sender.display_name,
-      avatar_url: sender.avatar_url,
-    },
-
-    receiver: {
-      user_id: receiver.user_id,
-      username: receiver.username,
-      display_name: receiver.display_name,
-      avatar_url: receiver.avatar_url,
-    },
-  };
-}
 
     //全部消息
     async getAll(){

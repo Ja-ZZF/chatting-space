@@ -48,4 +48,42 @@ export class UploadController {
 
     return { imageUrl };
   }
+
+  @Post('message-audio')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './public/uploads/message-audios', // 存储目录
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          cb(null, `audio-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        console.log('上传文件的 mimetype:', file.mimetype);
+        // 支持的音频格式
+        if (!file.mimetype.match(/^audio\/(mpeg|wav|x-wav|wave|m4a|ogg|aac)$/i)) {
+          return cb(new BadRequestException('只支持音频文件 (mp3, wav, wave, m4a, ogg, aac)'), false);
+        }
+
+        cb(null, true);
+      },
+      limits: { fileSize: 10 * 1024 * 1024 }, // 限制最大 10MB
+    }),
+  )
+  async uploadMessageAudio(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
+    if (!file) {
+      throw new BadRequestException('没有上传文件');
+    }
+
+    const protocol = req.protocol;
+    const host = req.get('host'); // 例如 47.117.0.254:3000
+    const audioUrl = `${protocol}://${host}/static/uploads/message-audios/${file.filename}`;
+
+    return { audioUrl };
+  }
 }

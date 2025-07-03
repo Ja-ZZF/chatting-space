@@ -55,6 +55,7 @@ export class ContactService {
             if (!lastMessage) return null;
             if (lastMessage.message_type === 'text') return lastMessage.content;
             if (lastMessage.message_type === 'image') return '[图片]';
+            if (lastMessage.message_type === 'audio') return '[语音消息]';
             return null;
           })(),
         };

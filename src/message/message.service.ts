@@ -106,19 +106,33 @@ export class MessageService {
     return this.messageRepository.find();
   }
 
+  //标记已读
   async markMessagesAsRead(
     contact_id: string,
     receiver_id: string,
-  ): Promise<number> {
-    const result = await this.messageRepository
+  ): Promise<Message[]> {
+    // 先查出所有未读消息
+    const unreadMessages = await this.messageRepository.find({
+      where: {
+        contact_id,
+        receiver_id,
+        is_read: false,
+      },
+      select: ['message_id', 'sender_id', 'contact_id'], // 只查必要字段
+    });
+
+    if (unreadMessages.length === 0) return [];
+
+    const messageIds = unreadMessages.map((msg) => msg.message_id);
+
+    // 批量更新为已读
+    await this.messageRepository
       .createQueryBuilder()
       .update(Message)
       .set({ is_read: true })
-      .where('contact_id = :contact_id', { contact_id })
-      .andWhere('receiver_id = :receiver_id', { receiver_id })
-      .andWhere('is_read = false')
+      .whereInIds(messageIds)
       .execute();
 
-    return result.affected || 0;
+    return unreadMessages;
   }
 }

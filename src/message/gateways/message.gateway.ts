@@ -17,7 +17,9 @@ import { MessageResponseDto } from '../dto/message.response.dto';
     origin: '*', // 根据你的前端地址设置
   },
 })
-export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class MessageGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -44,7 +46,14 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
   // 监听客户端发送的消息
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
-    @MessageBody() payload: { contact_id: string; sender_id: string; receiver_id: string; content: string; message_type: string },
+    @MessageBody()
+    payload: {
+      contact_id: string;
+      sender_id: string;
+      receiver_id: string;
+      content: string;
+      message_type: string;
+    },
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
     const newMessage = await this.messageService.createMessage(payload);
@@ -54,6 +63,30 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
     // 同时也发回给自己
     client.emit('receiveMessage', newMessage);
+  }
+
+  // ✅ 新增：消息已读通知
+  @SubscribeMessage('markAsRead')
+  async handleMarkAsRead(
+    @MessageBody()
+    payload: {
+      contact_id: string;
+      receiver_id: string;
+    },
+  ): Promise<void> {
+    // 更新数据库中该联系下所有未读消息为已读
+    const updatedMessages = await this.messageService.markMessagesAsRead(
+      payload.contact_id,
+      payload.receiver_id,
+    );
+
+    // 通知所有相关发送者，消息已被阅读
+    updatedMessages.forEach((msg) => {
+      this.server.to(msg.sender_id).emit('messageRead', {
+        messageId: msg.message_id,
+        contactId: msg.contact_id,
+      });
+    });
   }
 
   // 主动推送消息给某个用户（可用于后台触发）

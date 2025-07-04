@@ -13,12 +13,14 @@ export class MessageService {
     private readonly messageRepository: Repository<Message>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-) {}
+  ) {}
   /**
    * 根据 contact_id 获取该联系人的所有消息
    * @param contactId 联系人 ID
    */
-  async getMessagesByContactId(contactId: string): Promise<MessageResponseDto[]> {
+  async getMessagesByContactId(
+    contactId: string,
+  ): Promise<MessageResponseDto[]> {
     const messages = await this.messageRepository.find({
       where: { contact_id: contactId },
       relations: ['sender', 'receiver'],
@@ -27,7 +29,7 @@ export class MessageService {
       },
     });
 
-    return messages.map(msg => ({
+    return messages.map((msg) => ({
       message_id: msg.message_id,
       contact_id: msg.contact_id,
       sender_id: msg.sender_id,
@@ -35,6 +37,7 @@ export class MessageService {
       content: msg.content,
       message_type: msg.message_type,
       created_at: msg.created_at,
+      is_read: msg.is_read, // ✅ 添加 is_read 字段
 
       sender: {
         user_id: msg.sender.user_id,
@@ -80,6 +83,7 @@ export class MessageService {
       content: savedMessage.content,
       message_type: savedMessage.message_type,
       created_at: savedMessage.created_at,
+      is_read: savedMessage.is_read, // ✅ 加入 is_read 字段
 
       sender: {
         user_id: sender.user_id,
@@ -97,8 +101,24 @@ export class MessageService {
     };
   }
 
-    //全部消息
-    async getAll(){
-        return this.messageRepository.find();
-    }
+  //全部消息
+  async getAll() {
+    return this.messageRepository.find();
+  }
+
+  async markMessagesAsRead(
+    contact_id: string,
+    receiver_id: string,
+  ): Promise<number> {
+    const result = await this.messageRepository
+      .createQueryBuilder()
+      .update(Message)
+      .set({ is_read: true })
+      .where('contact_id = :contact_id', { contact_id })
+      .andWhere('receiver_id = :receiver_id', { receiver_id })
+      .andWhere('is_read = false')
+      .execute();
+
+    return result.affected || 0;
+  }
 }

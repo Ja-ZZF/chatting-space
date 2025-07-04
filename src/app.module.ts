@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { ContactModule } from './contacts/contact.module';
 import { MessageModule } from './message/message.module';
 import { UploadModule } from './upload/upload.module';
+import { ContactRequestModule } from './contact_request/contact_request.module';
 
 
 @Module({
@@ -27,6 +28,7 @@ import { UploadModule } from './upload/upload.module';
     ContactModule,
     MessageModule,
     UploadModule,
+    ContactRequestModule,
 
   ],
   controllers: [AppController],

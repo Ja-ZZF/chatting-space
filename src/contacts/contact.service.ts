@@ -8,25 +8,32 @@ import { CreateContactDto } from './dto/create-contact.dto';
 import { ContactWithUserDto } from './dto/contact-with-user.dto';
 import { ContactWithOtherUserDto } from './dto/contact-with-other-user.dto';
 import { LatestMessageView } from 'src/message/entities/latest-message-view.entity';
+import { MessageService } from 'src/message/message.service';
 
 @Injectable()
 export class ContactService {
   constructor(
     @InjectRepository(Contact)
     private readonly contactRepository: Repository<Contact>,
-     @InjectRepository(LatestMessageView)
+    @InjectRepository(LatestMessageView)
     private readonly latestMessageViewRepository: Repository<LatestMessageView>, // 注入视图仓库
+
+    private readonly messageService : MessageService,
   ) {}
 
   async findAllByUserId(userId: string): Promise<ContactWithOtherUserDto[]> {
-      const contacts = await this.contactRepository.createQueryBuilder('contact')
-        .leftJoinAndSelect('contact.userA', 'userA')
-        .leftJoinAndSelect('contact.userB', 'userB')
-        .where('contact.user_a_id = :userId OR contact.user_b_id = :userId', { userId })
-        .orderBy('contact.last_message_sent_at', 'DESC')
-        .getMany();
+    const contacts = await this.contactRepository
+      .createQueryBuilder('contact')
+      .leftJoinAndSelect('contact.userA', 'userA')
+      .leftJoinAndSelect('contact.userB', 'userB')
+      .where('contact.user_a_id = :userId OR contact.user_b_id = :userId', {
+        userId,
+      })
+      .orderBy('contact.last_message_sent_at', 'DESC')
+      .getMany();
 
-      return Promise.all(contacts.map(async c => {
+    return Promise.all(
+      contacts.map(async (c) => {
         const isUserA = c.userA.user_id === userId;
         const otherUser = isUserA ? c.userB : c.userA;
 
@@ -59,11 +66,14 @@ export class ContactService {
             return null;
           })(),
         };
-      }));
+      }),
+    );
   }
 
   async findOne(contactId: string): Promise<ContactResponseDto> {
-    const contact = await this.contactRepository.findOneBy({ contact_id: contactId });
+    const contact = await this.contactRepository.findOneBy({
+      contact_id: contactId,
+    });
     if (!contact) throw new Error('Contact not found');
 
     return {
@@ -75,7 +85,9 @@ export class ContactService {
     };
   }
 
-  async create(createContactDto: CreateContactDto): Promise<ContactResponseDto> {
+  async create(
+    createContactDto: CreateContactDto,
+  ): Promise<ContactResponseDto> {
     console.log(createContactDto);
 
     const { userAId, userBId } = createContactDto;
@@ -87,8 +99,8 @@ export class ContactService {
     const existingContact = await this.contactRepository.findOne({
       where: [
         { user_a_id: userAId, user_b_id: userBId },
-        { user_a_id: userBId, user_b_id: userAId }
-      ]
+        { user_a_id: userBId, user_b_id: userAId },
+      ],
     });
 
     if (existingContact) {
@@ -112,7 +124,9 @@ export class ContactService {
   }
 
   async delete(contactId: string): Promise<void> {
-    const result = await this.contactRepository.delete({ contact_id: contactId });
+    const result = await this.contactRepository.delete({
+      contact_id: contactId,
+    });
     if (result.affected === 0) {
       throw new Error('Contact not found');
     }
@@ -120,13 +134,18 @@ export class ContactService {
 
   // 👇 新增的方法：重置未读数
   async clearUnreadForUser(userId: string, contactId: string): Promise<void> {
-    const contact = await this.contactRepository.findOneBy({ contact_id: contactId });
+    const contact = await this.contactRepository.findOneBy({
+      contact_id: contactId,
+    });
 
     if (!contact) {
       throw new Error('联系人不存在');
     }
 
-    // 判断当前用户是 userA 还是 userB
+    // 标记该联系下由该用户接收的消息为已读
+    await this.messageService.markMessagesAsRead(contactId, userId);
+
+    // 判断当前用户是 userA 还是 userB，清除相应的 unreadCount
     if (contact.user_a_id === userId) {
       contact.user_a_unread = 0;
     } else if (contact.user_b_id === userId) {
@@ -135,8 +154,10 @@ export class ContactService {
       throw new Error('用户不在该联系人中');
     }
 
-    // 保存更新后的 contact
     await this.contactRepository.save(contact);
   }
-  
+
+  async findAll() {
+    return this.contactRepository.find();
+  }
 }

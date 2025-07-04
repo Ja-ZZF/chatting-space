@@ -29,6 +29,10 @@ export class Message {
   @CreateDateColumn({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   created_at: Date;
 
+  // ✅ 新增字段：是否已读
+  @Column({ type: 'boolean', default: false })
+  is_read: boolean;
+
   // 关系映射（可选）
   @ManyToOne(() => Contact, contact => contact.messages, {
     onDelete: 'CASCADE',

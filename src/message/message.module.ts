@@ -9,8 +9,9 @@ import { User } from 'src/users/entities/user.entity';
 import { LatestMessageView } from './entities/latest-message-view.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Message,User,LatestMessageView])],
-  providers: [MessageService,MessageGateway],
-  controllers: [MessageController]
+  imports: [TypeOrmModule.forFeature([Message, User, LatestMessageView])],
+  providers: [MessageService, MessageGateway],
+  controllers: [MessageController],
+  exports:[MessageService],
 })
 export class MessageModule {}

@@ -1,5 +1,16 @@
 // src/contacts/controllers/contact.controller.ts
-import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ContactService } from './contact.service';
 import { ContactResponseDto } from './dto/response-contact.dto';
 import { CreateContactDto } from './dto/create-contact.dto';
@@ -9,10 +20,16 @@ import { ContactWithOtherUserDto } from './dto/contact-with-other-user.dto';
 export class ContactController {
   constructor(private readonly contactService: ContactService) {}
 
+  @Get('all')
+  async getAll(){
+    return this.contactService.findAll();
+  }
 
   //根据用户id查询所有contact
   @Get()
-  async getContacts(@Query('userId') userId: string): Promise<ContactWithOtherUserDto[]> {
+  async getContacts(
+    @Query('userId') userId: string,
+  ): Promise<ContactWithOtherUserDto[]> {
     if (!userId) {
       throw new BadRequestException('Missing userId query parameter');
     }
@@ -27,7 +44,9 @@ export class ContactController {
 
   // 新增联系人
   @Post('add')
-  async createContact(@Body() createContactDto: CreateContactDto): Promise<ContactResponseDto> {
+  async createContact(
+    @Body() createContactDto: CreateContactDto,
+  ): Promise<ContactResponseDto> {
     return this.contactService.create(createContactDto);
   }
 
@@ -38,14 +57,13 @@ export class ContactController {
   }
 
   @Put(':contactId/clear-unread')
-    async clearUnread(
-      @Param('contactId') contactId: string,
-      @Query('userId') userId: string,
-    ): Promise<void> {
-      if (!userId || !contactId) {
-        throw new BadRequestException('Missing userId or contactId');
-      }
-      return this.contactService.clearUnreadForUser(userId, contactId);
+  async clearUnread(
+    @Param('contactId') contactId: string,
+    @Query('userId') userId: string,
+  ): Promise<void> {
+    if (!userId || !contactId) {
+      throw new BadRequestException('Missing userId or contactId');
     }
-
+    return this.contactService.clearUnreadForUser(userId, contactId);
+  }
 }

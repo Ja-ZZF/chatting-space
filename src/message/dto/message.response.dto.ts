@@ -8,6 +8,9 @@ export class MessageResponseDto {
   message_type: string;
   created_at: Date;
 
+  // ✅ 新增字段：是否已读
+  is_read: boolean;
+
   // 可选：发送者和接收者的部分信息
   sender?: {
     user_id: string;

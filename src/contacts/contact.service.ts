@@ -142,9 +142,6 @@ export class ContactService {
       throw new Error('联系人不存在');
     }
 
-    // 标记该联系下由该用户接收的消息为已读
-    await this.messageService.markMessagesAsRead(contactId, userId);
-
     // 判断当前用户是 userA 还是 userB，清除相应的 unreadCount
     if (contact.user_a_id === userId) {
       contact.user_a_unread = 0;

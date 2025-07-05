@@ -10,6 +10,8 @@ import { MessageModule } from './message/message.module';
 import { UploadModule } from './upload/upload.module';
 import { ContactRequestModule } from './contact_request/contact_request.module';
 import { RedisModule } from './redis/redis.module';
+import { UserRemarkModule } from './user_remark/user_remark.module';
+import { UserSpecialCareModule } from './user_special_care/user_special_care.module';
 
 
 @Module({
@@ -31,6 +33,9 @@ import { RedisModule } from './redis/redis.module';
     UploadModule,
     ContactRequestModule,
     RedisModule,
+    UserRemarkModule,
+    UserSpecialCareModule,
+
   ],
   controllers: [AppController],
   providers: [AppService],

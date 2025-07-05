@@ -13,6 +13,7 @@ import {
   Param,
   UploadedFile,
   Req,
+  Patch,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,6 +22,9 @@ import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
 import { Request } from 'express';
+import { UpdateDisplayNameDto } from './dto/update-display-name.dto';
+import { FriendUserResponseDto } from './dto/friend-user-response.dto';
+import { SearchUserDto } from './dto/search-user.dto';
 
 @Controller('users')
 export class UserController {
@@ -86,6 +90,7 @@ export class UserController {
     return user;
   }
 
+  //上传用户头像
   @Post('upload-avatar/:userId')
   @UseInterceptors(
     FileInterceptor('avatar', {
@@ -126,11 +131,22 @@ export class UserController {
     return { avatarUrl };
   }
 
-  // GET /users/search?keyword=abc
-  @Get('search-by-keyword')
+  // 根据关键字查询（带 is_friend 字段）
+  @Post('search-by-keyword')
   async searchUsers(
-    @Query('keyword') keyword: string,
-  ): Promise<UserResponseDto[]> {
-    return this.userService.searchUsersByUsername(keyword);
+    @Body() body: SearchUserDto,
+  ): Promise<FriendUserResponseDto[]> {
+    //const { keyword, currentUserId } = body;
+    return this.userService.searchUsersByUsername(body);
+  }
+
+  //更新显示名
+  @Patch('update-display-name')
+  async updateDisplayName(@Body() dto: UpdateDisplayNameDto) {
+    try {
+      return await this.userService.updateDisplayName(dto);
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
   }
 }

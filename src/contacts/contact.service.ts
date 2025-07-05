@@ -194,4 +194,23 @@ export class ContactService {
   async findAll() {
     return this.contactRepository.find();
   }
+
+  /**
+   * 获取指定用户的所有好友 ID
+   * 返回格式：[{ friend_user_id: string }]
+   */
+  async getAllFriendIds(userId: string): Promise<{ friend_user_id: string }[]> {
+    const contacts = await this.contactRepository.find({
+      where: [{ user_a_id: userId }, { user_b_id: userId }],
+      select: ['user_a_id', 'user_b_id'],
+    });
+
+    const friendIds: { friend_user_id: string }[] = contacts.map((contact) => {
+      const friendId =
+        contact.user_a_id === userId ? contact.user_b_id : contact.user_a_id;
+      return { friend_user_id: friendId };
+    });
+
+    return friendIds;
+  }
 }

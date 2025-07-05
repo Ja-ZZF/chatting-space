@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
@@ -13,7 +18,6 @@ import { CreateContactDto } from 'src/contacts/dto/create-contact.dto';
 
 @Injectable()
 export class ContactRequestService {
-
   constructor(
     @InjectRepository(ContactRequest)
     private readonly contactRequestRepo: Repository<ContactRequest>,
@@ -95,7 +99,7 @@ export class ContactRequestService {
     });
 
     if (existing) {
-      throw new Error('已存在待处理的好友请求');
+      throw new ConflictException('已存在待处理的好友请求');
     }
 
     const request = this.contactRequestRepo.create({
@@ -108,7 +112,7 @@ export class ContactRequestService {
     return await this.contactRequestRepo.save(request);
   }
 
-    // ✅ 接受请求
+  // ✅ 接受请求
   async acceptRequest(requestId: string): Promise<void> {
     const request = await this.contactRequestRepo.findOne({
       where: { request_id: requestId },
@@ -158,7 +162,7 @@ export class ContactRequestService {
   }
 
   //调试用 查找全部request
-  async findAll(){
+  async findAll() {
     return this.contactRequestRepo.find();
   }
 }

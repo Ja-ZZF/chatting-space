@@ -79,7 +79,7 @@ export class ContactRequestController {
    * 获取全部request
    */
   @Get()
-  async getAll(){
+  async getAll() {
     return this.contactRequestService.findAll();
   }
 }

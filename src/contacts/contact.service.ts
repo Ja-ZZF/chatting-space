@@ -9,19 +9,36 @@ import { ContactWithUserDto } from './dto/contact-with-user.dto';
 import { ContactWithOtherUserDto } from './dto/contact-with-other-user.dto';
 import { LatestMessageView } from 'src/message/entities/latest-message-view.entity';
 import { MessageService } from 'src/message/message.service';
+import Redis from 'ioredis';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class ContactService {
+  private redisClient: Redis;
+
   constructor(
     @InjectRepository(Contact)
     private readonly contactRepository: Repository<Contact>,
     @InjectRepository(LatestMessageView)
     private readonly latestMessageViewRepository: Repository<LatestMessageView>, // 注入视图仓库
 
-    private readonly messageService : MessageService,
-  ) {}
+    private readonly redisService: RedisService,
+  ) {
+    this.redisClient = redisService.getClient();
+  }
 
   async findAllByUserId(userId: string): Promise<ContactWithOtherUserDto[]> {
+    const cacheKey = `contacts:user:${userId}`;
+    console.log(`[Redis] 尝试读取联系人缓存，key=${cacheKey}`);
+
+    const cache = await this.redisClient.get(cacheKey);
+    if (cache) {
+      console.log(`[Redis] 联系人缓存命中`);
+      return JSON.parse(cache);
+    }
+
+    console.log(`[Redis] 联系人缓存未命中，查询数据库`);
+
     const contacts = await this.contactRepository
       .createQueryBuilder('contact')
       .leftJoinAndSelect('contact.userA', 'userA')
@@ -32,7 +49,7 @@ export class ContactService {
       .orderBy('contact.last_message_sent_at', 'DESC')
       .getMany();
 
-    return Promise.all(
+    const result = await Promise.all(
       contacts.map(async (c) => {
         const isUserA = c.userA.user_id === userId;
         const otherUser = isUserA ? c.userB : c.userA;
@@ -68,6 +85,12 @@ export class ContactService {
         };
       }),
     );
+
+    // 设置缓存，过期时间 5 分钟
+    await this.redisClient.set(cacheKey, JSON.stringify(result), 'EX', 300);
+    console.log(`[Redis] 联系人缓存已写入，key=${cacheKey}`);
+
+    return result;
   }
 
   async findOne(contactId: string): Promise<ContactResponseDto> {
@@ -114,6 +137,15 @@ export class ContactService {
 
     await this.contactRepository.save(newContact);
 
+    // 删除两个用户的联系人缓存，确保刷新
+    await Promise.all([
+      this.redisClient.del(`contacts:user:${userAId}`),
+      this.redisClient.del(`contacts:user:${userBId}`),
+    ]);
+    console.log(
+      `[Redis] 删除联系人缓存，keys=contacts:user:${userAId}, contacts:user:${userBId}`,
+    );
+
     return {
       contact_id: newContact.contact_id,
       user_a_id: newContact.user_a_id,
@@ -152,6 +184,11 @@ export class ContactService {
     }
 
     await this.contactRepository.save(contact);
+
+    // 删除该用户的联系人缓存，确保未读数刷新
+    const cacheKey = `contacts:user:${userId}`;
+    await this.redisClient.del(cacheKey);
+    console.log(`[Redis] 清除未读后删除缓存，key=${cacheKey}`);
   }
 
   async findAll() {

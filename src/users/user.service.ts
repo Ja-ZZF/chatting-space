@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
 import { User } from './entities/user.entity';
@@ -21,7 +21,7 @@ export class UserService {
    * 注册新用户
    */
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-    const { username, password, display_name} = createUserDto;
+    const { username, password, display_name } = createUserDto;
 
     // 1. 检查用户名是否已存在
     const existingUser = await this.userRepository.findOneBy({ username });
@@ -46,7 +46,10 @@ export class UserService {
   /**
    * 验证用户登录（用于 JWT 策略）
    */
-  async validateUser(username: string, password: string): Promise<Omit<User, 'password_hash'> | null> {
+  async validateUser(
+    username: string,
+    password: string,
+  ): Promise<Omit<User, 'password_hash'> | null> {
     // 1. 查找用户
     const user = await this.userRepository.findOneBy({ username });
     if (!user) return null;
@@ -63,7 +66,7 @@ export class UserService {
   /**
    * 查找所有用户
    */
-  async findAll():Promise<User[]>{
+  async findAll(): Promise<User[]> {
     return this.userRepository.find();
   }
 
@@ -87,8 +90,8 @@ export class UserService {
   }
 
   /**
- * 根据用户 ID 查找用户（可选）
- */
+   * 根据用户 ID 查找用户（可选）
+   */
   async findUserById(user_id: string): Promise<UserResponseDto | null> {
     const user = await this.userRepository.findOne({
       where: { user_id },
@@ -114,5 +117,36 @@ export class UserService {
 
     user.avatar_url = avatarUrl; // 假设 avatar 字段存储头像 URL
     await this.userRepository.save(user);
+  }
+
+  //根据用户名模糊查询
+  // 根据 username 和 display_name 模糊查询，并合并结果去重
+  async searchUsersByUsername(keyword: string): Promise<UserResponseDto[]> {
+    const [byUsername, byDisplayName] = await Promise.all([
+      this.userRepository.find({
+        where: { username: ILike(`%${keyword}%`) },
+        order: { created_at: 'DESC' },
+      }),
+      this.userRepository.find({
+        where: { display_name: ILike(`%${keyword}%`) },
+        order: { created_at: 'DESC' },
+      }),
+    ]);
+
+    const mergedMap = new Map<string, User>();
+    [...byUsername, ...byDisplayName].forEach((user) => {
+      mergedMap.set(user.user_id, user); // 去重：以 user_id 为键
+    });
+
+    return Array.from(mergedMap.values()).map(
+      (user) =>
+        new UserResponseDto({
+          user_id: user.user_id,
+          username: user.username,
+          display_name: user.display_name,
+          avatar_url: user.avatar_url,
+          created_at: user.created_at,
+        }),
+    );
   }
 }

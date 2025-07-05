@@ -22,12 +22,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
 import { Request } from 'express';
 
-
 @Controller('users')
 export class UserController {
-  constructor(
-    private readonly userService: UserService,
-  ) {}
+  constructor(private readonly userService: UserService) {}
 
   /**
    * 注册新用户
@@ -50,13 +47,15 @@ export class UserController {
 
   //获取所有用户信息（调试用）
   @Get('all')
-  async getAll(){
+  async getAll() {
     return this.userService.findAll();
   }
 
-  //根据name获取信息
+  //根据username获取信息
   @Get('search')
-  async searchUser(@Query('username') username: string): Promise<UserResponseDto> {
+  async searchUser(
+    @Query('username') username: string,
+  ): Promise<UserResponseDto> {
     if (!username || username.trim() === '') {
       throw new HttpException('Username is required', HttpStatus.BAD_REQUEST);
     }
@@ -71,19 +70,20 @@ export class UserController {
   }
 
   @Get('by-id')
-  async searchUserById(@Query('user_id') user_id : string):Promise<UserResponseDto>{
-    if(!user_id || user_id.trim()===''){
-      throw new HttpException("UserId is required",HttpStatus.BAD_REQUEST);
+  async searchUserById(
+    @Query('user_id') user_id: string,
+  ): Promise<UserResponseDto> {
+    if (!user_id || user_id.trim() === '') {
+      throw new HttpException('UserId is required', HttpStatus.BAD_REQUEST);
     }
 
-      const user = await this.userService.findUserById(user_id.trim());
+    const user = await this.userService.findUserById(user_id.trim());
 
-      if (!user) {
+    if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
     return user;
-
   }
 
   @Post('upload-avatar/:userId')
@@ -92,7 +92,8 @@ export class UserController {
       storage: diskStorage({
         destination: './public/uploads/avatar',
         filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           const ext = extname(file.originalname);
           cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
         },
@@ -125,6 +126,11 @@ export class UserController {
     return { avatarUrl };
   }
 
-
-
+  // GET /users/search?keyword=abc
+  @Get('search-by-keyword')
+  async searchUsers(
+    @Query('keyword') keyword: string,
+  ): Promise<UserResponseDto[]> {
+    return this.userService.searchUsersByUsername(keyword);
+  }
 }

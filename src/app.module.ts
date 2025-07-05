@@ -9,6 +9,7 @@ import { ContactModule } from './contacts/contact.module';
 import { MessageModule } from './message/message.module';
 import { UploadModule } from './upload/upload.module';
 import { ContactRequestModule } from './contact_request/contact_request.module';
+import { RedisModule } from './redis/redis.module';
 
 
 @Module({
@@ -29,7 +30,7 @@ import { ContactRequestModule } from './contact_request/contact_request.module';
     MessageModule,
     UploadModule,
     ContactRequestModule,
-
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

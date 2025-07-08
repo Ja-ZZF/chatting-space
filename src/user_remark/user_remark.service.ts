@@ -1,10 +1,10 @@
-import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { UserRemark } from "./entities/user_remark.entity";
-import { Repository } from "typeorm";
-import { GetUserRemarkDto } from "./dto/get-user-remark.dto";
-import { UserRemarkResponseDto } from "./dto/user-remark-response.dto";
-import { SetUserRemarkDto } from "./dto/set-user-remark.dto";
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserRemark } from './entities/user_remark.entity';
+import { In, Repository } from 'typeorm';
+import { GetUserRemarkDto } from './dto/get-user-remark.dto';
+import { UserRemarkResponseDto } from './dto/user-remark-response.dto';
+import { SetUserRemarkDto } from './dto/set-user-remark.dto';
 
 @Injectable()
 export class UserRemarkService {
@@ -13,7 +13,9 @@ export class UserRemarkService {
     private readonly remarkRepository: Repository<UserRemark>,
   ) {}
 
-  async getUserRemark(dto: GetUserRemarkDto): Promise<UserRemarkResponseDto | null> {
+  async getUserRemark(
+    dto: GetUserRemarkDto,
+  ): Promise<UserRemarkResponseDto | null> {
     const remark = await this.remarkRepository.findOneBy({
       owner_user_id: dto.owner_user_id,
       target_user_id: dto.target_user_id,
@@ -50,5 +52,24 @@ export class UserRemarkService {
     }
   }
 
-  
+  async getUserRemarksBatch(
+    ownerUserId: string,
+    targetUserIds: string[],
+  ): Promise<Map<string, string>> {
+    if (targetUserIds.length === 0) return new Map();
+
+    const remarks = await this.remarkRepository.find({
+      where: {
+        owner_user_id: ownerUserId,
+        target_user_id: In(targetUserIds),
+      },
+    });
+
+    // 转成 Map<target_user_id, remark>
+    const remarkMap = new Map<string, string>();
+    for (const r of remarks) {
+      remarkMap.set(r.target_user_id, r.remark);
+    }
+    return remarkMap;
+  }
 }

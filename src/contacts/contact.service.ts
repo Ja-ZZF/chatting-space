@@ -11,6 +11,7 @@ import { LatestMessageView } from 'src/message/entities/latest-message-view.enti
 import { MessageService } from 'src/message/message.service';
 import Redis from 'ioredis';
 import { RedisService } from 'src/redis/redis.service';
+import { UserRemarkService } from 'src/user_remark/user_remark.service';
 
 @Injectable()
 export class ContactService {
@@ -23,6 +24,7 @@ export class ContactService {
     private readonly latestMessageViewRepository: Repository<LatestMessageView>, // 注入视图仓库
 
     private readonly redisService: RedisService,
+    private readonly userRemarkService: UserRemarkService,
   ) {
     this.redisClient = redisService.getClient();
   }
@@ -49,10 +51,26 @@ export class ContactService {
       .orderBy('contact.last_message_sent_at', 'DESC')
       .getMany();
 
+    // 收集所有对方user_id，用于批量查询备注
+    const targetUserIds = contacts.map((c) => {
+      const isUserA = c.userA.user_id === userId;
+      return isUserA ? c.userB.user_id : c.userA.user_id;
+    });
+
+    // 批量查备注
+    const remarkMap = await this.userRemarkService.getUserRemarksBatch(
+      userId,
+      targetUserIds,
+    );
+
     const result = await Promise.all(
       contacts.map(async (c) => {
         const isUserA = c.userA.user_id === userId;
         const otherUser = isUserA ? c.userB : c.userA;
+
+        // 备注优先
+        const displayName =
+          remarkMap.get(otherUser.user_id) ?? otherUser.display_name;
 
         // 获取最后一条消息内容
         const lastMessage = await this.latestMessageViewRepository.findOneBy({
@@ -67,7 +85,7 @@ export class ContactService {
           otherUser: {
             user_id: otherUser.user_id,
             username: otherUser.username,
-            display_name: otherUser.display_name,
+            display_name: displayName,
             avatar_url: otherUser.avatar_url,
           },
 

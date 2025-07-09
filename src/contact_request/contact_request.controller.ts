@@ -86,23 +86,29 @@ export class ContactRequestController {
 
   /**
    * ✅ 接受好友请求
-   * POST /contact-request/:requestId/accept
+   * POST /contact-request/accept
    */
   @UseGuards(JwtAuthGuard)
-  @Post(':requestId/accept')
-  @HttpCode(HttpStatus.NO_CONTENT) // 返回 204，代表处理成功无响应体
-  async acceptRequest(@Param('requestId') requestId: string): Promise<void> {
+  @Post('accept')
+  @HttpCode(HttpStatus.NO_CONTENT) // 返回 204，无响应体
+  async acceptRequest(@Body('requestId') requestId: string): Promise<void> {
+    if (!requestId) {
+      throw new BadRequestException('requestId is required');
+    }
     await this.contactRequestService.acceptRequest(requestId);
   }
 
   /**
    * ✅ 拒绝好友请求
-   * POST /contact-request/:requestId/reject
+   * POST /contact-request/reject
    */
   @UseGuards(JwtAuthGuard)
-  @Post(':requestId/reject')
+  @Post('reject')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async rejectRequest(@Param('requestId') requestId: string): Promise<void> {
+  async rejectRequest(@Body('requestId') requestId: string): Promise<void> {
+    if (!requestId) {
+      throw new BadRequestException('requestId is required');
+    }
     await this.contactRequestService.rejectRequest(requestId);
   }
 

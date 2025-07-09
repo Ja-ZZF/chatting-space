@@ -152,9 +152,21 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Post('search-by-keyword')
   async searchUsers(
-    @Body() body: SearchUserDto,
+    @Body('keyword') keyword: string,
+    @Req() req: Request, // 或 Request 类型，但要能访问到 user
   ): Promise<FriendUserResponseDto[]> {
-    return this.userService.searchUsersByUsername(body);
+    const currentUserId = req.user?.user_id; // 从 JwtAuthGuard 提取的用户信息
+
+    if (!keyword || !currentUserId) {
+      throw new BadRequestException('Keyword 或用户身份缺失');
+    }
+
+    const dto: SearchUserDto = {
+      keyword,
+      currentUserId,
+    };
+
+    return this.userService.searchUsersByUsername(dto);
   }
 
   @UseGuards(JwtAuthGuard)

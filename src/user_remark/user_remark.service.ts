@@ -72,4 +72,23 @@ export class UserRemarkService {
     }
     return remarkMap;
   }
+
+  async removeUserRemark(remark_id: string): Promise<void> {
+    if (!remark_id) {
+      return;
+    }
+
+    try {
+      await this.remarkRepository.delete({ remark_id });
+    } catch (error) {
+      // 可选：日志记录
+      throw new Error(
+        `Failed to delete remark with id ${remark_id}: ${error.message}`,
+      );
+    }
+  }
+
+  async findAll() {
+    return this.remarkRepository.find();
+  }
 }

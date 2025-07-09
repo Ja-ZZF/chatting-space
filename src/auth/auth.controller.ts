@@ -7,16 +7,21 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body('username') username: string, @Body('password') password: string) {
+  async login(
+    @Body('username') username: string,
+    @Body('password') password: string,
+  ) {
     const user = await this.authService.validateUser(username, password);
     if (!user) {
       throw new Error('Invalid credentials');
     }
 
-    const { access_token } = await this.authService.login(user);
+    const { access_token, expires_in } = await this.authService.login(user);
+
     return {
       message: 'Login successful',
       access_token,
+      expires_in, // ✅ 添加过期时间返回
       user,
     };
   }

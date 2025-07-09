@@ -23,8 +23,11 @@ export class AuthService {
       sub: user.user_id,
     };
 
+    const expiresIn = 60 * 60 * 24; // 1天，单位：秒
+
     return {
       access_token: this.jwtService.sign(payload),
+      expires_in: expiresIn,
     };
   }
 }

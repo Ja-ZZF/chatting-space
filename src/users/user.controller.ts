@@ -14,6 +14,7 @@ import {
   UploadedFile,
   Req,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -21,17 +22,18 @@ import { UserResponseDto } from './dto/user-response.dto';
 import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
-import { Request } from 'express';
 import { UpdateDisplayNameDto } from './dto/update-display-name.dto';
 import { FriendUserResponseDto } from './dto/friend-user-response.dto';
 import { SearchUserDto } from './dto/search-user.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Request } from 'express';
 
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   /**
-   * 注册新用户
+   * ✅ 注册是公开接口
    */
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
@@ -49,17 +51,22 @@ export class UserController {
     };
   }
 
-  //获取所有用户信息（调试用）
+  /**
+   * ✅ 获取所有用户信息（调试用，建议上线时移除或加认证）
+   */
   @Get('all')
   async getAll() {
     return this.userService.findAll();
   }
 
-  //根据username获取信息
-  @Get('search')
-  async searchUser(
-    @Query('username') username: string,
-  ): Promise<UserResponseDto> {
+  /**
+   * ✅ 根据 token 中的 username 获取用户信息
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('search-by-name')
+  async searchUserByName(@Req() req: Request): Promise<UserResponseDto> {
+    const username = req.user?.username; // 从 token 解码后挂载的 user 对象里取 username
+
     if (!username || username.trim() === '') {
       throw new HttpException('Username is required', HttpStatus.BAD_REQUEST);
     }
@@ -73,10 +80,14 @@ export class UserController {
     return user;
   }
 
-  @Get('by-id')
-  async searchUserById(
-    @Query('user_id') user_id: string,
-  ): Promise<UserResponseDto> {
+  /**
+   * ✅ 根据 token 中的 user_id 获取用户信息
+   */
+  @UseGuards(JwtAuthGuard)
+  @Get('search-by-id')
+  async searchUserById(@Req() req: Request): Promise<UserResponseDto> {
+    const user_id = req.user?.user_id; // 从 token 解码后的 req.user 里获取 user_id
+
     if (!user_id || user_id.trim() === '') {
       throw new HttpException('UserId is required', HttpStatus.BAD_REQUEST);
     }
@@ -90,8 +101,8 @@ export class UserController {
     return user;
   }
 
-  //上传用户头像
-  @Post('upload-avatar/:userId')
+  @UseGuards(JwtAuthGuard)
+  @Post('upload-avatar')
   @UseInterceptors(
     FileInterceptor('avatar', {
       storage: diskStorage({
@@ -113,17 +124,21 @@ export class UserController {
     }),
   )
   async uploadAvatar(
-    @Param('userId') userId: string,
     @UploadedFile() file: Express.Multer.File,
-    @Req() req: Request, // 获取请求对象，用于拼接域名
+    @Req() req: Request,
   ) {
     if (!file) {
       throw new BadRequestException('没有上传文件');
     }
 
-    // 生成绝对 URL
+    // 从验证后的 req.user 里获取 user_id
+    const userId = req.user?.user_id;
+    if (!userId) {
+      throw new UnauthorizedException('无法获取用户信息');
+    }
+
     const protocol = req.protocol;
-    const host = req.get('host'); // 如 47.117.0.254:3000
+    const host = req.get('host');
     const avatarUrl = `${protocol}://${host}/static/uploads/avatar/${file.filename}`;
 
     await this.userService.updateAvatar(userId, avatarUrl);
@@ -131,20 +146,36 @@ export class UserController {
     return { avatarUrl };
   }
 
-  // 根据关键字查询（带 is_friend 字段）
+  /**
+   * ✅ 关键字搜索用户（带 is_friend 字段）
+   */
+  @UseGuards(JwtAuthGuard)
   @Post('search-by-keyword')
   async searchUsers(
     @Body() body: SearchUserDto,
   ): Promise<FriendUserResponseDto[]> {
-    //const { keyword, currentUserId } = body;
     return this.userService.searchUsersByUsername(body);
   }
 
-  //更新显示名
+  @UseGuards(JwtAuthGuard)
   @Patch('update-display-name')
-  async updateDisplayName(@Body() dto: UpdateDisplayNameDto) {
+  async updateDisplayName(
+    @Body('display_name') displayName: string, // 直接取 display_name 字符串
+    @Req() req: Request,
+  ) {
+    const userId = req.user?.user_id;
+    if (!userId) {
+      throw new UnauthorizedException('无法获取用户信息');
+    }
+
+    // 组装完整 DTO
+    const fullDto = {
+      user_id: userId,
+      display_name: displayName,
+    };
+
     try {
-      return await this.userService.updateDisplayName(dto);
+      return await this.userService.updateDisplayName(fullDto);
     } catch (error) {
       return { success: false, message: error.message };
     }

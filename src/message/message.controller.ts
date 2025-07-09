@@ -6,9 +6,14 @@ import {
   HttpStatus,
   Patch,
   Body,
+  UseGuards,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { MessageService } from './message.service';
 import { MessageResponseDto } from './dto/message.response.dto';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { Request } from 'express';
 
 @Controller('messages')
 export class MessageController {
@@ -19,6 +24,7 @@ export class MessageController {
     return this.messageService.getAll();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('by-contact')
   @HttpCode(HttpStatus.OK)
   async getMessagesByContactId(
@@ -28,11 +34,20 @@ export class MessageController {
     return this.messageService.getMessagesByContactId(contactId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch('mark-read')
   async markMessagesAsRead(
-    @Body() body: { contact_id: string; receiver_id: string },
+    @Body() body: { contact_id: string },
+    @Req() req: Request,
   ) {
-    const { contact_id, receiver_id } = body;
+    const { contact_id } = body;
+
+    // 从 JWT 认证通过后，req.user 里拿 user_id（即 sub）
+    const receiver_id = req.user?.user_id;
+
+    if (!receiver_id) {
+      throw new UnauthorizedException('未认证的用户');
+    }
 
     const updatedMessages = await this.messageService.markMessagesAsRead(
       contact_id,
@@ -45,5 +60,4 @@ export class MessageController {
       message_ids: updatedMessages.map((m) => m.message_id),
     };
   }
-  
 }

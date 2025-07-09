@@ -7,11 +7,16 @@ import {
   BadRequestException,
   HttpStatus,
   HttpCode,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { ContactRequestService } from './contact_request.service';
 import { CreateContactRequestDto } from './dto/create-contact-request.dto';
 import { ContactRequest } from './entities/contact_request.entity';
 import { ContactRequestResponseDto } from './dto/contact-request-response.dto';
+import { Request } from 'express';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { User } from 'src/users/entities/user.entity';
 
 @Controller('contact-request')
 export class ContactRequestController {
@@ -21,10 +26,15 @@ export class ContactRequestController {
    * ✅ 查询某用户发出的所有好友请求
    * GET /contact-request/sent/:userId
    */
-  @Get('sent/:userId')
+  @UseGuards(JwtAuthGuard)
+  @Get('sent')
   async getSentRequests(
-    @Param('userId') userId: string,
+    @Req() req: Request,
   ): Promise<ContactRequestResponseDto[]> {
+    const userId = req.user?.user_id;
+    if (!userId) {
+      throw new BadRequestException('User not authenticated');
+    }
     return this.contactRequestService.findSentRequests(userId);
   }
 
@@ -32,10 +42,15 @@ export class ContactRequestController {
    * ✅ 查询某用户收到的所有好友请求
    * GET /contact-request/received/:userId
    */
-  @Get('received/:userId')
+  @UseGuards(JwtAuthGuard)
+  @Get('received')
   async getReceivedRequests(
-    @Param('userId') userId: string,
+    @Req() req: Request,
   ): Promise<ContactRequestResponseDto[]> {
+    const userId = req.user?.user_id;
+    if (!userId) {
+      throw new BadRequestException('User not authenticated');
+    }
     return this.contactRequestService.findReceivedRequests(userId);
   }
 
@@ -43,13 +58,28 @@ export class ContactRequestController {
    * ✅ 发起一条好友请求
    * POST /contact-request
    */
+  @UseGuards(JwtAuthGuard)
   @Post()
   async createRequest(
-    @Body() dto: CreateContactRequestDto,
+    @Req() req: Request,
+    @Body() body: { target_id: string; message?: string },
   ): Promise<ContactRequest> {
-    if (dto.requester_id === dto.target_id) {
+    const requester_id = req.user?.user_id;
+    const { target_id, message } = body;
+
+    if (!requester_id) {
+      throw new BadRequestException('未认证的用户');
+    }
+
+    if (requester_id === target_id) {
       throw new BadRequestException('不能向自己发送好友请求');
     }
+
+    const dto: CreateContactRequestDto = {
+      requester_id,
+      target_id,
+      message,
+    };
 
     return this.contactRequestService.createRequest(dto);
   }
@@ -58,6 +88,7 @@ export class ContactRequestController {
    * ✅ 接受好友请求
    * POST /contact-request/:requestId/accept
    */
+  @UseGuards(JwtAuthGuard)
   @Post(':requestId/accept')
   @HttpCode(HttpStatus.NO_CONTENT) // 返回 204，代表处理成功无响应体
   async acceptRequest(@Param('requestId') requestId: string): Promise<void> {
@@ -68,6 +99,7 @@ export class ContactRequestController {
    * ✅ 拒绝好友请求
    * POST /contact-request/:requestId/reject
    */
+  @UseGuards(JwtAuthGuard)
   @Post(':requestId/reject')
   @HttpCode(HttpStatus.NO_CONTENT)
   async rejectRequest(@Param('requestId') requestId: string): Promise<void> {

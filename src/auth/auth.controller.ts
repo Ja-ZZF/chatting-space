@@ -16,13 +16,22 @@ export class AuthController {
       throw new Error('Invalid credentials');
     }
 
-    const { access_token, expires_in } = await this.authService.login(user);
+    const { access_token, expires_in, refresh_token, refresh_expires_in } =
+      await this.authService.login(user);
 
     return {
       message: 'Login successful',
       access_token,
-      expires_in, // ✅ 添加过期时间返回
+      expires_in, // access token 过期时间，秒
+      refresh_token, // 新增：refresh token
+      refresh_expires_in, // 新增：refresh token 过期时间，秒
       user,
     };
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Body('refresh_token') refreshToken: string) {
+    return this.authService.refreshToken(refreshToken);
   }
 }

@@ -12,7 +12,7 @@ import { ContactRequestModule } from './contact_request/contact_request.module';
 import { RedisModule } from './redis/redis.module';
 import { UserRemarkModule } from './user_remark/user_remark.module';
 import { UserSpecialCareModule } from './user_special_care/user_special_care.module';
-
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -26,6 +26,9 @@ import { UserSpecialCareModule } from './user_special_care/user_special_care.mod
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: false, // 开发用，生产环境建议关闭
     }),
+    ConfigModule.forRoot({
+      isGlobal: true, // 全局可用
+    }),
     UserModule,
     AuthModule,
     ContactModule,
@@ -35,7 +38,6 @@ import { UserSpecialCareModule } from './user_special_care/user_special_care.mod
     RedisModule,
     UserRemarkModule,
     UserSpecialCareModule,
-
   ],
   controllers: [AppController],
   providers: [AppService],

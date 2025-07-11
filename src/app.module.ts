@@ -13,6 +13,7 @@ import { RedisModule } from './redis/redis.module';
 import { UserRemarkModule } from './user_remark/user_remark.module';
 import { UserSpecialCareModule } from './user_special_care/user_special_care.module';
 import { ConfigModule } from '@nestjs/config';
+import { MomentModule } from './moment/moment.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ConfigModule } from '@nestjs/config';
     RedisModule,
     UserRemarkModule,
     UserSpecialCareModule,
+    MomentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

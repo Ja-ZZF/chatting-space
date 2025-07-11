@@ -5,11 +5,12 @@ import { User } from './entities/user.entity';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { ContactModule } from 'src/contacts/contact.module';
+import { Moment } from 'src/moment/entities/moment.entity';
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]), // 注册 User 实体
+    TypeOrmModule.forFeature([User,Moment]), // 注册 User 实体
     ContactModule,
   ],
   controllers: [UserController],

@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Unique } from 'typeorm';
+import { Moment } from 'src/moment/entities/moment.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Unique, OneToMany } from 'typeorm';
 
 @Entity('users')
 @Unique(['username']) // 唯一约束
@@ -41,4 +42,7 @@ export class User {
     name: 'created_at',
   })
   created_at: Date;
+
+  @OneToMany(()=>Moment,moment => moment.user)
+  moments : Moment[];
 }

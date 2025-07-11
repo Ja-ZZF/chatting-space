@@ -23,7 +23,7 @@ export class AuthService {
       sub: user.user_id,
     };
 
-    // access token 过期时间 15分钟（秒）
+    // access token 过期时间 1天（秒）
     const accessTokenExpiresIn = 24 * 60 * 60;
 
     // refresh token 过期时间 7天（秒）
